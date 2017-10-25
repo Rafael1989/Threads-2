@@ -3,7 +3,9 @@ package br.com.alura.servidor;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.util.Scanner;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 public class DistribuirTarefas implements Runnable{
 
@@ -39,8 +41,12 @@ public class DistribuirTarefas implements Runnable{
 					break;
 				case "c2":
 					saidaCliente.println("Confirmação do comando c2");
-					ComandoC2 c2 = new ComandoC2(saidaCliente);
-					this.threadPool.execute(c2);
+					ComandoC2AcessaBanco comandoC2AcessaBanco = new ComandoC2AcessaBanco(saidaCliente);
+					ComandoC2ChamaWS comandoC2ChamaWS = new ComandoC2ChamaWS(saidaCliente);
+					Future<String> futureBanco = this.threadPool.submit(comandoC2AcessaBanco);
+					Future<String> futureWS = this.threadPool.submit(comandoC2ChamaWS);
+					Callable<Void> juntaResultados = new JuntaResultadosFutureWSFutureBanco(futureWS, futureBanco, saidaCliente);
+					this.threadPool.submit(juntaResultados);
 					break;
 				case "fim":
 					saidaCliente.println("Desligando o servidor");
